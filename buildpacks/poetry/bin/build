@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+
+bp_dir=$(
+	cd "$(dirname "$0")"/..
+	pwd
+)
+build_dir=$(pwd)
+layers_dir=$1
+platform_dir=$2
+
+# shellcheck source=/dev/null
+source "$bp_dir/lib/build.sh"
+rm -rf "$build_dir/.venv"
+
+#Failures that are caught immediately
+# fail_multiple_lockfiles "$build_dir"
+
+clear_cache_on_stack_change "$layers_dir"
+
+export_env "$platform_dir/env" "" ""
+
+export PATH=$layers_dir/poetry/bin:$PATH
+export PYTHONPATH=$layers_dir/poetry/lib/python3.9/site-packages:$PYTHONPATH
+install_or_reuse_poetry "$layers_dir/poetry" "$build_dir"
+
+# warn_prebuilt_modules "$build_dir"
+
+run_prebuild "$build_dir"
+
+clear_cache_on_python_version_change "$layers_dir"
+
+write_to_store_toml "$layers_dir"
+
+install_or_reuse_pypackages "$build_dir" "$layers_dir/pypackages"
+
+run_build "$build_dir"
+
+# write_launch_toml "$build_dir/package.json" "$layers_dir/launch.toml"
+
+# prune_devdependencies "$build_dir"

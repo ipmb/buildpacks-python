@@ -1,0 +1,23 @@
+api = "0.6"
+
+[buildpack]
+id = "apppack/python"
+version = "0.0.1"
+name = "Python Buildpack"
+keywords = ["python"]
+
+[[buildpack.licenses]]
+type = "MIT"
+
+[[stacks]]
+id = "heroku-20"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[metadata]
+
+[metadata.release]
+
+#[metadata.release.docker]
+#repository = "public.ecr.aws/heroku-buildpacks/heroku-nodejs-engine-buildpack"

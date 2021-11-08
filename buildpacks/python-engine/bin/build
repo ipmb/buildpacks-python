@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+
+layers_dir=$1
+
+bp_dir="$CNB_BUILDPACK_DIR"
+build_dir=$(pwd)
+
+# shellcheck source=/dev/null
+source "$bp_dir/lib/utils/log.sh"
+
+# shellcheck source=/dev/null
+source "$bp_dir/lib/bootstrap.sh"
+
+# shellcheck source=/dev/null
+source "$bp_dir/lib/build.sh"
+
+info "Python Buildpack"
+
+clear_cache_on_stack_change "$layers_dir"
+
+write_to_store_toml "$layers_dir"
+
+set_up_environment "$layers_dir/python"
+
+bootstrap_buildpack "$layers_dir/bootstrap"
+
+install_or_reuse_toolbox "$layers_dir/toolbox"
+export PATH=$layers_dir/toolbox/bin:$PATH
+
+store_python_version "$layers_dir/python"
+
+install_or_reuse_python "$layers_dir/python" "$build_dir"
+export PATH=$layers_dir/python/bin:$PATH
+
+# TODO: is this necessary? sqlite3 works fine in Python without it
+# buildpack_sqlite3_install "$layers_dir/python"
+
+clear_cache_on_python_version_change "$layers_dir" "$layers_dir/python"
+
+parse_pyproject_toml_engines "$layers_dir/package_manager_metadata" "$build_dir"
+
+pymajorminor=$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")
+export PATH="$layers_dir/pip/bin:$PATH"
+export PYTHONPATH="$layers_dir/pip/lib/python$pymajorminor/site-packages:$PYTHONPATH"
+install_or_reuse_pip "$layers_dir/pip" "$build_dir"
+
+# set_python_env "$layers_dir/python"
+
+# copy_profile "$layers_dir/python" "$bp_dir"
+
+# write_launch_toml "$build_dir" "$layers_dir/launch.toml"
